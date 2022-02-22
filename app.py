@@ -23,11 +23,13 @@ def loadModel() :
 
 # get prediction result
 def predict():
-    scale = 50
+    # scale = 50
     front_img = cv.imread(f'./image/{FRONT}-{num}.jpg')
     side_img = cv.imread(f'./image/{SIDE}-{num}.jpg')
-    height = int(front_img.shape[0] * scale / 100)
-    width = int(front_img.shape[1] * scale / 100)
+    # height = int(front_img.shape[0] * scale / 100)
+    # width = int(front_img.shape[1] * scale / 100)
+    height = 800
+    width = 800
     front_img = cv.resize(front_img, (width, height))
     side_img = cv.resize(side_img, (width,height))
     front_result = bodypix.predict_single(front_img)
@@ -43,10 +45,15 @@ def predict():
     # get user height
     result_front_img = cv.imread(f'{output_path}/front-simple-mask.jpg')
     result_side_img = cv.imread(f'{output_path}/side-simple-mask.jpg')
-    user_height_pixel, max_coor, min_coor = getHeightInPixel(result_front_img, width, height)
-    # user_head_height = getHeadHeight(result_side_img, width, height)
-    getBodyProportion(result_front_img, width, height, user_height_pixel, max_coor, min_coor)
-    return user_height_pixel
+    user_height_pixel_front, max_coor_front, min_coor_front = getHeightInPixel(result_front_img, width, height)
+    user_height_pixel_side, max_coor_side, min_coor_side = getHeightInPixel(result_side_img, width, height)
+
+    # get body part position
+    shoulder_front_position, chest_front_position, waist_front_position, hip_front_position = getBodyProportion(result_front_img, width, height, user_height_pixel_front, max_coor_front, min_coor_front)
+    shoulder_side_position, chest_side_position, waist_side_position, hip_side_position = getBodyProportion(result_side_img, width, height, user_height_pixel_side, max_coor_side, min_coor_side)
+    print(shoulder_front_position, chest_front_position, waist_front_position, hip_front_position)
+    print(shoulder_side_position, chest_side_position, waist_side_position, hip_side_position)
+    return user_height_pixel_front
 
 # simple mask
 def getSimpleMask(result, pose):
