@@ -13,7 +13,10 @@ def getHeightInPixel(image, width, height):
                     max_height = [j, i]
                 if min_height[1] < i:
                     min_height = [j, i]
-    return min_height[1] - max_height[1], max_height
+    user_height = min_height[1] - max_height[1]
+    print("user height pixel:", user_height)
+    print("max height:", max_height)
+    return user_height, max_height
 
 # get body proportion
 def getBodyProportion(user_height_pixel, max_coor):
@@ -31,31 +34,37 @@ def getBodyProportion(user_height_pixel, max_coor):
     # hip
     hip = int(max_coor[1] + (3 * section_height) + (section_height / 2))
 
+    print("body propotion position", shoulder, chest, waist, hip)
     return shoulder, chest, waist, hip
 
-def measure(shoulder_point, chest_point, waist_point, hip_point, width):
+def measure(shoulder_point, chest_point, waist_point, hip_point, width, user_height, user_height_pixel_front, user_height_pixel_side):
     front_img = Image.open(f'output/front-color-mask.jpg')
     side_img = Image.open(f'output/side-color-mask.jpg')
 
+    # ratio
+    ratio_front = user_height / user_height_pixel_front
+    ratio_side = user_height / user_height_pixel_side
+
     # shoulder (only front)
-    shoulder = getDistant(front_img, shoulder_point[0], width)
+    shoulder = int(getDistant(front_img, shoulder_point[0], width) * ratio_front)
 
     # chest
-    chest_front = getDistant(front_img, chest_point[0], width)
-    chest_side = getDistant(side_img, chest_point[1], width)
+    chest_front = getDistant(front_img, chest_point[0], width) * ratio_front
+    chest_side = getDistant(side_img, chest_point[1], width) * ratio_side
     chest = getPerimeter(chest_front, chest_side)
 
     # waist
-    waist_front = getDistant(front_img, waist_point[0], width)
-    waist_side = getDistant(side_img, waist_point[1], width)
+    waist_front = getDistant(front_img, waist_point[0], width) * ratio_front
+    waist_side = getDistant(side_img, waist_point[1], width) * ratio_side
     waist = getPerimeter(waist_front, waist_side)
 
     # hip
-    hip_front = getDistant(front_img, hip_point[0], width)
-    hip_side = getDistant(side_img, hip_point[1], width)
+    hip_front = getDistant(front_img, hip_point[0], width) * ratio_front
+    hip_side = getDistant(side_img, hip_point[1], width) * ratio_side
     hip = getPerimeter(hip_front, hip_side)
    
     return shoulder, chest, waist, hip
+    # return shoulder, chest_front * 2, waist_front * 2, hip_front * 2
 
 
 def getDistant(image, point, width):
@@ -78,11 +87,17 @@ def getDistant(image, point, width):
         else:
             count += 1
     distance = sqrt(pow((border_point[1] - border_point[0]), 2))
-    return int(distance)
+    return distance
 
 def getPerimeter(front_point, side_point):
-    front_distance = int(front_point / 2)
-    side_distance = int(side_point / 2)
-
-    perimeter = 2 * pi * sqrt((pow(front_distance, 2) + pow(side_distance, 2)) / 2)
+    a = front_point / 2
+    b = side_point / 2
+    h = ((a - b)**2) / ((a + b)**2)
+    # perimeter = pi * (a + b)
+    # perimeter = pi * sqrt( 2 * ((a**2) + (b**2)))
+    # perimeter = pi * (1.5 * (a + b) - sqrt(a * b))
+    # perimeter = pi * (3 * (a + b) - sqrt((3 * a + b) * (a + 3 * b)))
+    # perimeter = pi * (a + b) * (1 + ((3 * h) / (10 + sqrt(4 - (3 * h)))))
+    # perimeter = 2 * pi * sqrt(((a**2) + (b**2)) / 2)
+    perimeter = pi * (a + b) * (3 * (((a - b)**2) / (((a + b)**2) * (sqrt(-3 * h + 4) + 10))) + 1)
     return int(perimeter)
