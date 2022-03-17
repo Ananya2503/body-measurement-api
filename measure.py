@@ -5,6 +5,7 @@ from math import pi, sqrt
 def getHeightInPixel(image, width, height):
     max_height = [0, 0] # [x, y]
     min_height = [0, 0]
+    
     for i in range(height): # y
         for j in range(width): # x
             (b, g ,r) = image[i, j]
@@ -19,25 +20,25 @@ def getHeightInPixel(image, width, height):
     return user_height, max_height
 
 # get body proportion
-def getBodyProportion(user_height_pixel, max_coor):
+def getBodyProportion(user_height_pixel):
     section_height = int(user_height_pixel / 8)
 
     # shoulder
-    shoulder = int(max_coor[1] + section_height + (section_height / 2))
+    shoulder = int(section_height + (section_height / 2))
 
     # chest
-    chest = max_coor[1] + (section_height * 2)
+    chest = section_height * 2
 
     # waist
-    waist = max_coor[1] + (section_height * 3)
+    waist = section_height * 3
 
     # hip
-    hip = int(max_coor[1] + (3 * section_height) + (section_height / 2))
+    hip = int((3 * section_height) + (section_height / 2))
 
     print("body propotion position", shoulder, chest, waist, hip)
     return shoulder, chest, waist, hip
 
-def measure(shoulder_point, chest_point, waist_point, hip_point, width, user_height, user_height_pixel_front, user_height_pixel_side):
+def measure(shoulder_point, chest_point, waist_point, hip_point, user_height, user_height_pixel_front, user_height_pixel_side):
     front_img = Image.open(f'output/front-color-mask.jpg')
     side_img = Image.open(f'output/side-color-mask.jpg')
 
@@ -46,34 +47,34 @@ def measure(shoulder_point, chest_point, waist_point, hip_point, width, user_hei
     ratio_side = user_height / user_height_pixel_side
 
     # shoulder (only front)
-    shoulder = int(getDistant(front_img, shoulder_point[0], width) * ratio_front)
+    shoulder = int(getDistant(front_img, shoulder_point[0]) * ratio_front)
 
     # chest
-    chest_front = getDistant(front_img, chest_point[0], width) * ratio_front
-    chest_side = getDistant(side_img, chest_point[1], width) * ratio_side
+    chest_front = getDistant(front_img, chest_point[0]) * ratio_front
+    chest_side = getDistant(side_img, chest_point[1]) * ratio_side
     chest = getPerimeter(chest_front, chest_side)
 
     # waist
-    waist_front = getDistant(front_img, waist_point[0], width) * ratio_front
-    waist_side = getDistant(side_img, waist_point[1], width) * ratio_side
+    waist_front = getDistant(front_img, waist_point[0]) * ratio_front
+    waist_side = getDistant(side_img, waist_point[1]) * ratio_side
     waist = getPerimeter(waist_front, waist_side)
 
     # hip
-    hip_front = getDistant(front_img, hip_point[0], width) * ratio_front
-    hip_side = getDistant(side_img, hip_point[1], width) * ratio_side
+    hip_front = getDistant(front_img, hip_point[0]) * ratio_front
+    hip_side= getDistant(side_img, hip_point[1]) * ratio_side
     hip = getPerimeter(hip_front, hip_side)
    
     return shoulder, chest, waist, hip
-    # return shoulder, chest_front * 2, waist_front * 2, hip_front * 2
 
 
-def getDistant(image, point, width):
+def getDistant(image, point):
     R_BASE = range(128, 204)
     G_BASE = range(203, 256)
     B_BASE = range(64, 152)
 
     border_point = [0, 0] # [left, right]
     count = 0
+    width = image.size[0]
     px = image.load()
 
     for i in range(width):
@@ -86,18 +87,18 @@ def getDistant(image, point, width):
             count = 0
         else:
             count += 1
-    distance = sqrt(pow((border_point[1] - border_point[0]), 2))
+    distance = sqrt((border_point[1] - border_point[0])**2)
     return distance
 
 def getPerimeter(front_point, side_point):
     a = front_point / 2
     b = side_point / 2
-    h = ((a - b)**2) / ((a + b)**2)
+    # h = ((a - b)**2) / ((a + b)**2)
     # perimeter = pi * (a + b)
     # perimeter = pi * sqrt( 2 * ((a**2) + (b**2)))
     # perimeter = pi * (1.5 * (a + b) - sqrt(a * b))
     # perimeter = pi * (3 * (a + b) - sqrt((3 * a + b) * (a + 3 * b)))
     # perimeter = pi * (a + b) * (1 + ((3 * h) / (10 + sqrt(4 - (3 * h)))))
-    # perimeter = 2 * pi * sqrt(((a**2) + (b**2)) / 2)
-    perimeter = pi * (a + b) * (3 * (((a - b)**2) / (((a + b)**2) * (sqrt(-3 * h + 4) + 10))) + 1)
+    perimeter = 2 * pi * sqrt(((a**2) + (b**2)) / 2)
+    # perimeter = pi * (a + b) * (3 * (((a - b)**2) / (((a + b)**2) * (sqrt(-3 * h + 4) + 10))) + 1)
     return int(perimeter)

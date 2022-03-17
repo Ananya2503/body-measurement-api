@@ -51,8 +51,8 @@ def predict():
     result_side_color = cropImage(result_side_color, max_coor_side, user_height_pixel_side, SIDE)
 
     # get body part position
-    shoulder_front_position, chest_front_position, waist_front_position, hip_front_position = getBodyProportion(user_height_pixel_front, max_coor_front)
-    shoulder_side_position, chest_side_position, waist_side_position, hip_side_position = getBodyProportion(user_height_pixel_side, max_coor_side)
+    shoulder_front_position, chest_front_position, waist_front_position, hip_front_position = getBodyProportion(user_height_pixel_front)
+    shoulder_side_position, chest_side_position, waist_side_position, hip_side_position = getBodyProportion(user_height_pixel_side)
 
     # measure
     shoulder, chest, waist, hip = measure([shoulder_front_position, shoulder_side_position],
@@ -61,7 +61,6 @@ def predict():
             [hip_front_position, hip_side_position],
             HEIGHT, user_height_pixel_front, user_height_pixel_side)
     return shoulder, chest, waist, hip
-    # return 1, 1, 1, 1
 
 # simple mask
 def getSimpleMask(result, pose):
