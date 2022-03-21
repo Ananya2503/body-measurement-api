@@ -13,12 +13,27 @@ HEIGHT = 164
 # 43 81 70 88
 # 44 86 80 98
 
-# setup input and output path
+# setup output path
 def setupPath():
     output_path = Path('./output')
     output_path.mkdir(parents=True, exist_ok=True)
     print("setup path finish")
     return output_path
+
+# remove output directory
+def removeDir():
+    output_file = Path('./output/').glob('*.jpg')
+    output_path = Path('./output')
+    
+    for f in output_file:
+        try:
+            f.unlink()
+        except OSError as e:
+            print('Error: %s : %s' % (f, e.strerror))
+    try:
+        output_path.rmdir()
+    except OSError as e:
+        print('Error: %s : %s', (output_path, e.strerror))
 
 # get prediction result
 def predict():
@@ -87,3 +102,4 @@ if __name__ == '__main__':
     bodypix = load_model(download_model(BodyPixModelPaths.RESNET50_FLOAT_STRIDE_16), output_stride=16)
     shoulder, chest, waist, hip = predict()
     print("measure:", shoulder, chest, waist, hip)
+    removeDir()
