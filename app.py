@@ -5,9 +5,10 @@ from keras.preprocessing.image import save_img
 import cv2 as cv
 from measure import *
 
-num = 5
+NUM = 5
 FRONT = 'front'
 SIDE = 'side'
+SCALE = 0.28
 HEIGHT = 164
 # 43 81 70 88
 # 44 86 80 98
@@ -21,11 +22,10 @@ def setupPath():
 
 # get prediction result
 def predict():
-    front_img = cv.imread(f'./image/{FRONT}-{num}.jpg')
-    side_img = cv.imread(f'./image/{SIDE}-{num}.jpg')
-    width =  int(front_img.shape[1] * 0.4)
-    height = int(front_img.shape[0] * 0.4)
-    print("image dimension:", width, height)
+    front_img = cv.imread(f'./image/{FRONT}-{NUM}.jpg')
+    side_img = cv.imread(f'./image/{SIDE}-{NUM}.jpg')
+    width =  int(front_img.shape[1] * SCALE)
+    height = int(front_img.shape[0] * SCALE)
     front_img = cv.resize(front_img, (width, height))
     side_img = cv.resize(side_img, (width,height))
     front_result = bodypix.predict_single(front_img)
@@ -77,7 +77,7 @@ def getColorMask(result, mask, pose):
 
 # crop image
 def cropImage(image, max_coor, user_height, pose):
-    crop_image = image[max_coor[1]:max_coor[1] + user_height + 1, 0:user_height + 1] # [height, width]
+    crop_image = image[max_coor[1]:max_coor[1] + user_height + 1, max_coor[0] - int(user_height / 2):max_coor[0] + int(user_height / 2) + 1] # [height, width]
     save_img(f'output/{pose}-color-mask.jpg', crop_image)
     print("crop image finished")
     return crop_image

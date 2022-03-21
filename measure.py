@@ -47,7 +47,7 @@ def measure(shoulder_point, chest_point, waist_point, hip_point, user_height, us
     ratio_side = user_height / user_height_pixel_side
 
     # shoulder (only front)
-    shoulder = int(getDistant(front_img, shoulder_point[0]) * ratio_front)
+    shoulder = int(getDistant(front_img, shoulder_point[0]) * ratio_front * 1.3)
 
     # chest
     chest_front = getDistant(front_img, chest_point[0]) * ratio_front
@@ -88,6 +88,7 @@ def getDistant(image, point):
         else:
             count += 1
     distance = sqrt((border_point[1] - border_point[0])**2)
+    print(border_point)
     return distance
 
 def getPerimeter(front_point, side_point):
@@ -96,9 +97,9 @@ def getPerimeter(front_point, side_point):
     # h = ((a - b)**2) / ((a + b)**2)
     # perimeter = pi * (a + b)
     # perimeter = pi * sqrt( 2 * ((a**2) + (b**2)))
-    # perimeter = pi * (1.5 * (a + b) - sqrt(a * b))
+    perimeter = pi * ((3 / 2) * (a + b) - sqrt(a * b))
     # perimeter = pi * (3 * (a + b) - sqrt((3 * a + b) * (a + 3 * b)))
     # perimeter = pi * (a + b) * (1 + ((3 * h) / (10 + sqrt(4 - (3 * h)))))
-    perimeter = 2 * pi * sqrt(((a**2) + (b**2)) / 2)
+    # perimeter = 2 * pi * sqrt(((a**2) + (b**2)) / 2)
     # perimeter = pi * (a + b) * (3 * (((a - b)**2) / (((a + b)**2) * (sqrt(-3 * h + 4) + 10))) + 1)
     return int(perimeter)
