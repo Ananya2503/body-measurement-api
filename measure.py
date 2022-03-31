@@ -15,8 +15,6 @@ def getHeightInPixel(image, width, height):
                 if min_height[1] < i:
                     min_height = [j, i]
     user_height = min_height[1] - max_height[1]
-    print("user height pixel:", user_height)
-    print("max height:", max_height)
     return user_height, max_height
 
 # get body proportion
@@ -35,7 +33,6 @@ def getBodyProportion(user_height_pixel):
     # hip
     hip = int((3 * section_height) + (section_height / 2))
 
-    print("body propotion position", shoulder, chest, waist, hip)
     return shoulder, chest, waist, hip
 
 def measure(shoulder_point, chest_point, waist_point, hip_point, user_height, user_height_pixel_front, user_height_pixel_side):
@@ -88,7 +85,6 @@ def getDistant(image, point):
         else:
             count += 1
     distance = sqrt((border_point[1] - border_point[0])**2)
-    print(border_point)
     return distance
 
 def getPerimeter(front_point, side_point):
