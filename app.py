@@ -1,11 +1,12 @@
 # import necessary libraries
+import re
 from flask import Flask, request, jsonify
 from tf_bodypix.api import load_model, download_model, BodyPixModelPaths
 from pathlib import Path
 from keras.preprocessing.image import save_img
 import cv2 as cv
 import numpy as np
-from measure import *
+from measure import get_body_proportion, get_height_in_pixel, measure
 
 app = Flask(__name__)
 
@@ -16,12 +17,12 @@ SCALE = 0.28
 # 44 86 80 98
 
 # setup output path
-def setupPath():
+def setup_path():
     output_path = Path('./output')
     output_path.mkdir(parents=True, exist_ok=True)
 
 # remove output directory
-def removeDir():
+def remove_dir():
     output_file = Path('./output/').glob('*.jpg')
     output_path = Path('./output')
     
@@ -36,20 +37,30 @@ def removeDir():
         print('Error: %s : %s', (output_path, e.strerror))
 
 # get prediction result
-@app.route('/measure', methods=['POST', 'GET'])
+@app.route('/measure', methods=['POST'])
 def predict():
     if request.method == 'POST':
+        # get data
+        if request.form.get('height'):
+            user_height = int(request.form['height'])
+        else:
+            return "No height"
+        if request.files.get('front'):
+            front = request.files['front'].read()
+        else:
+            return "No front image"
+        if request.files.get('side'):
+            side = request.files['side'].read()
+        else:
+            return "No side image"
+
         # setup
-        setupPath()
+        setup_path()
         bodypix = load_model(download_model(BodyPixModelPaths.RESNET50_FLOAT_STRIDE_16), output_stride=16)
 
-        # get data
-        content = request.json
-        user_height = int(content['height'])
-        front_img = np.array(content['front'])
-        side_img = np.array(content['side'])
-
-        # convert image list to numpy array
+        # image processing
+        front_img = img_process(front)
+        side_img = img_process(side)
         width = front_img.shape[1]
         height = front_img.shape[0]
         
@@ -58,26 +69,26 @@ def predict():
         side_result = bodypix.predict_single(side_img)
 
         # mask
-        front_simple_mask = getSimpleMask(front_result, FRONT)
-        side_simple_mask = getSimpleMask(side_result, SIDE)
-        getColorMask(front_result, front_simple_mask, FRONT)
-        getColorMask(front_result, side_simple_mask, SIDE)
+        front_simple_mask = get_simple_mask(front_result, FRONT)
+        side_simple_mask = get_simple_mask(side_result, SIDE)
+        get_color_mask(front_result, front_simple_mask, FRONT)
+        get_color_mask(front_result, side_simple_mask, SIDE)
 
         # get user height
         result_front_img = cv.imread(f'output/front-simple-mask.jpg')
         result_side_img = cv.imread(f'output/side-simple-mask.jpg')
-        user_height_pixel_front, max_coor_front = getHeightInPixel(result_front_img, width, height)
-        user_height_pixel_side, max_coor_side = getHeightInPixel(result_side_img, width, height)
+        user_height_pixel_front, max_coor_front = get_height_in_pixel(result_front_img, width, height)
+        user_height_pixel_side, max_coor_side = get_height_in_pixel(result_side_img, width, height)
 
         # crop image
         result_front_color = cv.cvtColor(cv.imread(f'output/front-color-mask.jpg'), cv.COLOR_BGR2RGB)
-        result_front_color = cropImage(result_front_color, max_coor_front, user_height_pixel_front, FRONT)
+        result_front_color = crop_image(result_front_color, max_coor_front, user_height_pixel_front, FRONT)
         result_side_color = cv.cvtColor(cv.imread(f'output/side-color-mask.jpg'), cv.COLOR_BGR2RGB)
-        result_side_color = cropImage(result_side_color, max_coor_side, user_height_pixel_side, SIDE)
+        result_side_color = crop_image(result_side_color, max_coor_side, user_height_pixel_side, SIDE)
 
         # get body part position
-        shoulder_front_position, chest_front_position, waist_front_position, hip_front_position = getBodyProportion(user_height_pixel_front)
-        shoulder_side_position, chest_side_position, waist_side_position, hip_side_position = getBodyProportion(user_height_pixel_side)
+        shoulder_front_position, chest_front_position, waist_front_position, hip_front_position = get_body_proportion(user_height_pixel_front)
+        shoulder_side_position, chest_side_position, waist_side_position, hip_side_position = get_body_proportion(user_height_pixel_side)
 
         # measure
         shoulder, chest, waist, hip = measure([shoulder_front_position, shoulder_side_position],
@@ -87,30 +98,41 @@ def predict():
             user_height, user_height_pixel_front, user_height_pixel_side)
         
         # clear output directory
-        removeDir()
+        remove_dir()
         return jsonify({
             'shoulder': shoulder,
             'chest': chest,
             'waist': waist,
             'hip': hip
         })
+    else:
+        return "Invalid method"
 
 # simple mask
-def getSimpleMask(result, pose):
+def get_simple_mask(result, pose):
     mask = result.get_mask(threshold=0.5)
     save_img(f'output/{pose}-simple-mask.jpg', mask)
     return mask
 
 # color mask
-def getColorMask(result, mask, pose):
+def get_color_mask(result, mask, pose):
     color_mask = result.get_colored_part_mask(mask)
     save_img(f'output/{pose}-color-mask.jpg', color_mask)
 
 # crop image
-def cropImage(image, max_coor, user_height, pose):
+def crop_image(image, max_coor, user_height, pose):
     crop_image = image[max_coor[1]:max_coor[1] + user_height + 1, max_coor[0] - int(user_height / 2):max_coor[0] + int(user_height / 2) + 1] # [height, width]
     save_img(f'output/{pose}-color-mask.jpg', crop_image)
     return crop_image
+
+# image processing
+def img_process(image):
+    img = np.fromstring(image, np.uint8)
+    img = cv.imdecode(img, cv.IMREAD_UNCHANGED)
+    img = cv.resize(img, (int(img.shape[1] * SCALE), int(img.shape[0] * SCALE)))
+    img = cv.cvtColor(img, cv.COLOR_BGR2RGB)
+    img = cv.rotate(img, cv.ROTATE_90_COUNTERCLOCKWISE)
+    return img
 
 @app.route('/', methods=['GET'])
 def home():
