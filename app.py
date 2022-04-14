@@ -1,5 +1,4 @@
 # import necessary libraries
-import re
 from flask import Flask, request, jsonify
 from tf_bodypix.api import load_model, download_model, BodyPixModelPaths
 from pathlib import Path
@@ -44,15 +43,15 @@ def predict():
         if request.form.get('height'):
             user_height = int(request.form['height'])
         else:
-            return "No height"
+            return "กรุณาระบุส่วนสูง"
         if request.files.get('front'):
             front = request.files['front'].read()
         else:
-            return "No front image"
+            return "กรุณาระบุภาพด้านหน้า"
         if request.files.get('side'):
             side = request.files['side'].read()
         else:
-            return "No side image"
+            return "กรุณาระบุภาพด้านข้าง"
 
         # setup
         setup_path()
@@ -99,12 +98,17 @@ def predict():
         
         # clear output directory
         remove_dir()
-        return jsonify({
-            'shoulder': shoulder,
-            'chest': chest,
-            'waist': waist,
-            'hip': hip
-        })
+
+        # check data before return
+        if (shoulder == 0) or (chest == 0) or (waist == 0) or (hip == 0):
+            return "กรุณาถ่ายภาพใหม่อีกครั้ง"
+        else:
+            return jsonify({
+                'shoulder': shoulder,
+                'chest': chest,
+                'waist': waist,
+                'hip': hip
+            })
     else:
         return "Invalid method"
 
@@ -127,7 +131,7 @@ def crop_image(image, max_coor, user_height, pose):
 
 # image processing
 def img_process(image):
-    img = np.fromstring(image, np.uint8)
+    img = np.frombuffer(image, np.uint8)
     img = cv.imdecode(img, cv.IMREAD_UNCHANGED)
     img = cv.resize(img, (int(img.shape[1] * SCALE), int(img.shape[0] * SCALE)))
     img = cv.cvtColor(img, cv.COLOR_BGR2RGB)

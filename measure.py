@@ -90,12 +90,5 @@ def get_distant(image, point):
 def get_perimeter(front_point, side_point):
     a = front_point / 2
     b = side_point / 2
-    # h = ((a - b)**2) / ((a + b)**2)
-    # perimeter = pi * (a + b)
-    # perimeter = pi * sqrt( 2 * ((a**2) + (b**2)))
-    # perimeter = pi * ((3 / 2) * (a + b) - sqrt(a * b))
-    # perimeter = pi * (3 * (a + b) - sqrt((3 * a + b) * (a + 3 * b)))
-    # perimeter = pi * (a + b) * (1 + ((3 * h) / (10 + sqrt(4 - (3 * h)))))
     perimeter = 2 * pi * sqrt(((a**2) + (b**2)) / 2)
-    # perimeter = pi * (a + b) * (3 * (((a - b)**2) / (((a + b)**2) * (sqrt(-3 * h + 4) + 10))) + 1)
     return int(perimeter)
