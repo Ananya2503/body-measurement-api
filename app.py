@@ -79,6 +79,9 @@ def predict():
         user_height_pixel_front, max_coor_front = get_height_in_pixel(result_front_img, width, height)
         user_height_pixel_side, max_coor_side = get_height_in_pixel(result_side_img, width, height)
 
+        if (user_height_pixel_front < (height * 0.5)) or (user_height_pixel_side < (height * 0.5)):
+            return "กรุณาถ่ายภาพใหม่อีกครั้ง"
+
         # crop image
         result_front_color = cv.cvtColor(cv.imread(f'output/front-color-mask.jpg'), cv.COLOR_BGR2RGB)
         result_front_color = crop_image(result_front_color, max_coor_front, user_height_pixel_front, FRONT)
